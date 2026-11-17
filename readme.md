@@ -9,7 +9,20 @@ MCP(Model Context Protocol)를 통해 한국어·영어로 검색·열람할 수
 
 ## 설치
 
+### 방법 1: `uv tool install` 전역 설치 (권장)
+
 ```bash
+uv tool install git+https://github.com/kirrie/hhrag.git
+```
+
+설치 후 어느 디렉토리에서나 `hhrag` 명령을 바로 사용할 수 있습니다.
+(`requires-python`이 `<3.15`로 고정되어 있어 Rust 빌드 없이 prebuilt wheel로 설치됩니다.)
+
+### 방법 2: 저장소 클론 후 로컬 실행
+
+```bash
+git clone https://github.com/kirrie/hhrag.git
+cd hhrag
 uv sync
 ```
 
@@ -20,6 +33,10 @@ uv sync
 PDF 폴더 경로를 지정해 실행하면 **증분 벡터 인덱싱**과 **`codex mcp add` 등록**을 한 번에 마칩니다.
 
 ```bash
+# 전역 설치(방법 1)인 경우
+hhrag --pdf-dir "/path/to/thesis_papers"
+
+# 로컬 저장소(방법 2)인 경우
 uv run hhrag --pdf-dir "/path/to/thesis_papers"
 ```
 

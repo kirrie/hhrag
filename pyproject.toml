@@ -7,7 +7,7 @@ name = "hhrag"
 version = "0.1.0"
 description = "PaperQA2와 bge-m3 기반 석사논문 PDF 로컬 벡터 인덱싱 및 Codex MCP 서버"
 readme = "readme.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.15"
 dependencies = [
 	"paper-qa[local]>=5.0.0",
 	"mcp>=1.0.0",

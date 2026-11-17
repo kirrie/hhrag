@@ -4,6 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 DEFAULT_CODEX_BIN = "codex"
 DEFAULT_UV_BIN = "uv"
@@ -25,18 +26,25 @@ def build_codex_mcp_args(
 		raise ValueError("임베딩 모델 이름은 비어 있을 수 없습니다.")
 	resolved_project = project_dir.expanduser().resolve()
 	resolved_pdf = pdf_dir.expanduser().resolve()
+	if (resolved_project / "pyproject.toml").is_file():
+		serve_cmd = [
+			DEFAULT_UV_BIN,
+			"--directory",
+			str(resolved_project),
+			"run",
+			"hhrag",
+			"serve",
+		]
+	else:
+		# `uv tool install` 등 전역 설치 환경에서는 현재 가상환경 Python으로 직접 실행한다.
+		serve_cmd = [sys.executable, "-m", "hhrag.cli", "serve"]
 	return [
 		DEFAULT_CODEX_BIN,
 		"mcp",
 		"add",
 		clean_name,
 		"--",
-		DEFAULT_UV_BIN,
-		"--directory",
-		str(resolved_project),
-		"run",
-		"hhrag",
-		"serve",
+		*serve_cmd,
 		"--pdf-dir",
 		str(resolved_pdf),
 		"--embedding-model",

@@ -2,18 +2,20 @@
 
 from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
 from hhrag.codex_installer import build_codex_mcp_args, install_codex_mcp
 
 
-def test_build_codex_mcp_args_structure(tmp_path: Path) -> None:
-	"""codex mcp add 명령 인자가 정확한 순서와 절대 경로로 생성된다."""
+def test_build_codex_mcp_args_for_repo_dir(tmp_path: Path) -> None:
+	"""pyproject.toml이 있는 소스 폴더에서는 uv --directory 기반 명령을 생성한다."""
 	project_dir = tmp_path / "proj"
 	pdf_dir = tmp_path / "pdfs"
 	project_dir.mkdir()
 	pdf_dir.mkdir()
+	(project_dir / "pyproject.toml").write_text("[project]\nname='hhrag'\n", encoding="utf-8")
 
 	args = build_codex_mcp_args("hhrag", project_dir, pdf_dir, "st-BAAI/bge-m3")
 	assert args[:5] == ["codex", "mcp", "add", "hhrag", "--"]
@@ -26,6 +28,24 @@ def test_build_codex_mcp_args_structure(tmp_path: Path) -> None:
 		"serve",
 	]
 	assert args[11:] == [
+		"--pdf-dir",
+		str(pdf_dir.resolve()),
+		"--embedding-model",
+		"st-BAAI/bge-m3",
+	]
+
+
+def test_build_codex_mcp_args_for_installed_tool(tmp_path: Path) -> None:
+	"""전역 설치 환경에서는 현재 Python 인터프리터 모듈 실행 명령을 생성한다."""
+	site_dir = tmp_path / "site-packages"
+	pdf_dir = tmp_path / "pdfs"
+	site_dir.mkdir()
+	pdf_dir.mkdir()
+
+	args = build_codex_mcp_args("hhrag", site_dir, pdf_dir, "st-BAAI/bge-m3")
+	assert args[:5] == ["codex", "mcp", "add", "hhrag", "--"]
+	assert args[5:9] == [sys.executable, "-m", "hhrag.cli", "serve"]
+	assert args[9:] == [
 		"--pdf-dir",
 		str(pdf_dir.resolve()),
 		"--embedding-model",
