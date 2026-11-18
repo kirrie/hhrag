@@ -5,6 +5,15 @@ from pathlib import Path
 import pytest
 
 from hhrag.config import IndexConfig
+from hhrag.progress import (
+	STATUS_ADDED,
+	STATUS_LOADING_MODEL,
+	STATUS_PROCESSING,
+	STATUS_SAVING,
+	STATUS_SCANNING,
+	STATUS_SKIPPED,
+	IndexProgress,
+)
 from hhrag.repository import PaperRepository
 from tests.conftest import FakeEmbeddingModel, write_unicode_pdf
 
@@ -84,3 +93,27 @@ async def test_list_and_get_paper_chunks(
 
 	with pytest.raises(ValueError, match="비어 있을 수 없습니다"):
 		await repo.search("   ", embedding_model=fake_embedding)
+
+
+async def test_index_directory_emits_per_file_progress(
+	sample_pdf_dir: Path,
+	fake_embedding: FakeEmbeddingModel,
+) -> None:
+	"""인덱싱 시 파일별 processing/added 및 재실행 시 skipped 진행 이벤트를 발행한다."""
+	events: list[IndexProgress] = []
+	repo = PaperRepository(IndexConfig(pdf_dir=sample_pdf_dir))
+	await repo.index_directory(embedding_model=fake_embedding, on_progress=events.append)
+
+	statuses = [ev.status for ev in events]
+	assert statuses[0] == STATUS_SCANNING
+	assert STATUS_LOADING_MODEL in statuses
+	assert statuses.count(STATUS_PROCESSING) == 3
+	assert statuses.count(STATUS_ADDED) == 3
+	assert statuses[-1] == STATUS_SAVING
+
+	rerun_events: list[IndexProgress] = []
+	await repo.index_directory(
+		embedding_model=fake_embedding,
+		on_progress=rerun_events.append,
+	)
+	assert [ev.status for ev in rerun_events].count(STATUS_SKIPPED) == 3

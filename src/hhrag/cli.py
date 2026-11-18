@@ -21,6 +21,7 @@ from hhrag.config import (
 )
 from hhrag.mcp_server import create_mcp_server
 from hhrag.pdf_scanner import validate_pdf_dir
+from hhrag.progress import print_console_progress
 from hhrag.repository import PaperRepository
 
 KNOWN_COMMANDS = frozenset({"setup", "index", "install-mcp", "serve"})
@@ -151,7 +152,12 @@ def _run_indexing(
 ) -> dict[str, int]:
 	"""PDF 벡터 인덱싱을 실행하고 비어 있는 인덱스 여부를 검증한다."""
 	logger.info("PDF 벡터 인덱싱을 시작합니다.")
-	stats = asyncio.run(repo.index_directory(embedding_model=embedding_model))
+	stats = asyncio.run(
+		repo.index_directory(
+			embedding_model=embedding_model,
+			on_progress=print_console_progress,
+		)
+	)
 	if stats["total"] == 0:
 		raise ValueError(
 			"인덱싱할 PDF 파일을 찾을 수 없습니다. 디렉토리 내 .pdf 파일을 확인해 주세요."
